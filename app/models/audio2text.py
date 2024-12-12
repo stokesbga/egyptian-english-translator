@@ -36,6 +36,7 @@ def translate(eg_text:str):
                do_sample=True, 
                temperature=0.7, 
                top_p=0.5)
+    en_text = en_text[0]['generated_text'].split('### Response:\n',1)[1]
     return en_text
 
 
@@ -43,7 +44,7 @@ def process(audio_path):
     eg_transcriptions = transcribe(audio_path)
     en_text = translate(eg_transcriptions)
     print("Translation:", en_text)
-    return en_text
+    return eg_transcriptions, en_text
 
 if __name__=="__main__":
     if len(sys.argv) > 0:

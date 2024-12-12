@@ -1,17 +1,17 @@
 
-FROM python:3.11
+FROM mambaorg/micromamba
 
 
 WORKDIR /code
 
 
-COPY ./requirements.txt /code/requirements.txt
-
-
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-
-
+COPY ./environment.yml /code/environment.yml
 COPY ./app /code/app
 
+RUN micromamba install --yes -n base --file ./environment.yml && \
+    micromamba clean --all --yes
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
 
-CMD ["fastapi", "run", "app/main.py", "--port", "80"]
+EXPOSE 7777
+
+CMD ["fastapi", "run", "app/main.py", "--port", "7777"]
