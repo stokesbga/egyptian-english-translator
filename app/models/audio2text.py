@@ -1,20 +1,22 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from numba import cuda
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, WhisperTokenizer, WhisperForConditionalGeneration
 import torch
 import sys
 
-recog_pipe = pipeline(model="alexstokes/whisper-small-eg")
 
 # Take recognition and pipe to Translator
-tokenizer = AutoTokenizer.from_pretrained("ahmedsamirio/Egyptian-Arabic-Translator-Llama-3-8B")
-model = AutoModelForCausalLM.from_pretrained("ahmedsamirio/Egyptian-Arabic-Translator-Llama-3-8B",
-                                              torch_dtype=torch.float16,
-                                               load_in_8bit=True)
-                                                # attn_implementation="flash_attention_2")
-pipe = pipeline(task='text-generation', model=model, tokenizer=tokenizer)
+# recog_tokenizer = AutoTokenizer.from_pretrained('shards/recog/tokenizer', local_files_only=True)
+# recog_model = AutoModelForCausalLM.from_pretrained('shards/recog/model', local_files_only=True, torch_dtype=torch.float16)
+
+# translate_tokenizer = AutoTokenizer.from_pretrained("shards/translate/tokenizer", local_files_only=True)
+# translate_model = AutoModelForCausalLM.from_pretrained("shards/translate/model", torch_dtype=torch.float16, local_files_only=True)
+
+# Pipes
+
+recognition_pipe = pipeline(task="automatic-speech-recognition", model='shards/recog/model', tokenizer='shards/recog/tokenizer')
+translate_pipe = pipeline(task='text-generation', model='shards/translate/model', tokenizer='shards/translate/model')
 
 
-en_template = """<|begin_of_text|>Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+LLAMA_EN_TEMPLATE = """<|begin_of_text|>Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
 ### Instruction:
 Translate the following text to English.
@@ -27,11 +29,11 @@ Translate the following text to English.
 
 
 def transcribe(audio_path):
-    text = recog_pipe(audio_path)["text"]
+    text = recognition_pipe(audio_path)["text"]
     return text
 
 def translate(eg_text:str):
-    en_text = pipe(en_template.format(message=eg_text), 
+    en_text = translate_pipe(LLAMA_EN_TEMPLATE.format(message=eg_text), 
                max_new_tokens=512, 
                do_sample=True, 
                temperature=0.7, 
