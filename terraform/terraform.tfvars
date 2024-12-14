@@ -1,0 +1,1 @@
+container_image = "575108950936.dkr.ecr.us-east-1.amazonaws.com/inference/translator:latest"
