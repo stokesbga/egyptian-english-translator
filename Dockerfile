@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -r /code/requirements.txt
 
 EXPOSE 80
 
-ENTRYPOINT ["gunicorn", "-k" "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:80", "app.main:app", "-n"]
+ENTRYPOINT ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:80", "app.main:app", "-n"]
