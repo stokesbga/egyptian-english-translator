@@ -1,5 +1,5 @@
 
-FROM mambaorg/micromamba
+FROM mambaorg/micromamba:cuda12.4.1-ubuntu22.04
 
 
 WORKDIR /code
@@ -13,7 +13,6 @@ RUN micromamba install --yes -n base --file ./environment.yml && \
     ARG MAMBA_DOCKERFILE_ACTIVATE=1
 RUN pip install --no-cache-dir -r /code/requirements.txt
 
-RUN python /code/app/models/refresh_checkpoints.py
-EXPOSE 7777
+EXPOSE 80
 
-CMD ["fastapi", "run", "app/main.py", "--port", "7777"]
+CMD ["fastapi", "run", "app/main.py", "--port", "80"]

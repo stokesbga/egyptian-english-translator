@@ -40,7 +40,7 @@ resource "aws_sagemaker_endpoint_configuration" "eg-en-translator-endpoint-confi
     variant_name           = "en-eg-translator-variant"
     model_name             = aws_sagemaker_model.sagemaker-eg-en-translator-model.name
     initial_instance_count = 1
-    instance_type          = "ml.inf1.xlarge"
+    instance_type          = "ml.t2.medium"
   }
 
   tags = {
