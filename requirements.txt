@@ -1,2 +1,5 @@
 python-multipart
 sagemaker
+pydantic
+uvicorn
+gunicorn

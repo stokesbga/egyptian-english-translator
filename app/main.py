@@ -1,12 +1,10 @@
 import os
 from fastapi import FastAPI, File, UploadFile, HTTPException
-import models.audio2text as audio2text
-import models.refresh_checkpoints as rcp
+import app.models.audio2text as audio2text
 import shutil
 
 UPLOADS_DIR = os.path.abspath('app/uploads')
 
-rcp()
 
 app = FastAPI()
 

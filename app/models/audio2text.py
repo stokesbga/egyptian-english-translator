@@ -1,17 +1,10 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, WhisperTokenizer, WhisperForConditionalGeneration
+from transformers import pipeline
 import torch
 import sys
 
-
-# Take recognition and pipe to Translator
-# recog_tokenizer = AutoTokenizer.from_pretrained('shards/recog/tokenizer', local_files_only=True)
-# recog_model = AutoModelForCausalLM.from_pretrained('shards/recog/model', local_files_only=True, torch_dtype=torch.float16)
-
-# translate_tokenizer = AutoTokenizer.from_pretrained("shards/translate/tokenizer", local_files_only=True)
-# translate_model = AutoModelForCausalLM.from_pretrained("shards/translate/model", torch_dtype=torch.float16, local_files_only=True)
+torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Pipes
-
 recognition_pipe = pipeline(task="automatic-speech-recognition", model='shards/recog/model', tokenizer='shards/recog/tokenizer')
 translate_pipe = pipeline(task='text-generation', model='shards/translate/model', tokenizer='shards/translate/model')
 

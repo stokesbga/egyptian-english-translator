@@ -1,5 +1,5 @@
 
-FROM mambaorg/micromamba:cuda12.4.1-ubuntu22.04
+FROM --platform=linux/amd64 mambaorg/micromamba:cuda12.4.1-ubuntu22.04
 
 
 WORKDIR /code
@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -r /code/requirements.txt
 
 EXPOSE 80
 
-CMD ["fastapi", "run", "app/main.py", "--port", "80"]
+ENTRYPOINT ["gunicorn", "-k" "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:80", "app.main:app", "-n"]
