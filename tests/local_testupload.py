@@ -8,6 +8,5 @@ files = [('audio_file', open('app/demo.wav', 'rb'))]
 resp = requests.post(url=url, files=files) 
 
 end = time.time()
-
 print(resp.json())
 print(f'Request Processed in: {end-start} seconds')
