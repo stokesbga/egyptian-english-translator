@@ -5,7 +5,6 @@ import shutil
 
 UPLOADS_DIR = os.path.abspath('app/uploads')
 
-
 app = FastAPI()
 
 @app.get("/")

@@ -1,3 +1,3 @@
-shards/recog
-shards/translate
+__pycache__
+models/uploads
 terraform/.terraform

@@ -1,12 +1,14 @@
-from transformers import pipeline
+from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM, WhisperForConditionalGeneration, WhisperProcessor, WhisperTokenizer
 import torch
+
 import sys
+import os
 
 torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Pipes
-recognition_pipe = pipeline(task="automatic-speech-recognition", model='shards/recog/model', tokenizer='shards/recog/tokenizer')
-translate_pipe = pipeline(task='text-generation', model='shards/translate/model', tokenizer='shards/translate/model')
+recognition_pipe = pipeline(model="alexstokes/whisper-small-eg2") 
+translate_pipe = pipeline(model="ahmedsamirio/Egyptian-Arabic-Translator-Llama-3-8B")
 
 
 LLAMA_EN_TEMPLATE = """<|begin_of_text|>Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.

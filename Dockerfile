@@ -1,17 +1,21 @@
 
-FROM --platform=linux/amd64 mambaorg/micromamba:cuda12.4.1-ubuntu22.04
+FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        git \
+        python3-pip \
+        python3-dev \
+        python3-opencv \
+        libglib2.0-0
 
 WORKDIR /code
 
 COPY ./requirements.txt /code/requirements.txt
-COPY ./environment.yml /code/environment.yml
 COPY ./app /code/app
-
-RUN micromamba install --yes -n base --file ./environment.yml && \
-    micromamba clean --all --yes
-    ARG MAMBA_DOCKERFILE_ACTIVATE=1
-RUN pip install --no-cache-dir -r /code/requirements.txt
+RUN  --mount=type=cache,target=/root/.cache/pip pip install -r /code/requirements.txt
 
 EXPOSE 80
 

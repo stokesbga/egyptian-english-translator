@@ -3,3 +3,6 @@ sagemaker
 pydantic
 uvicorn
 gunicorn
+torch
+torchaudio
+transformers
