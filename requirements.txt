@@ -6,3 +6,6 @@ gunicorn
 torch
 torchaudio
 transformers
+autoawq
+accelerate
+bitsandbytes

@@ -1,44 +1,79 @@
 import os
-from fastapi import FastAPI, File, UploadFile, HTTPException
 import app.models.audio2text as audio2text
-from pydantic import BaseModel
-import shutil
+from app.model_proccessors import MODEL_MAP, health_check
+from fastapi import FastAPI, File, UploadFile, Request
 from typing import Optional
+from pathlib import Path
+import uvicorn
+from fastapi.encoders import jsonable_encoder
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
+from functools import partial
+from concurrent.futures import ProcessPoolExecutor
+import time
+import asyncio
+import uuid
+from collections import defaultdict
 
-UPLOADS_DIR = os.path.abspath('app/uploads')
 
-class TextPayload(BaseModel):
-    route: str | None = "None"
-    arabic_text: str = ""
+# <<< START ASYNC QUEUE
+class Item:
+    id: str
+    name: str
+    args = {}
 
-app = FastAPI()
-
-def health_check():
-    return {"health_check": "OK"}
-
-def translate_demo():
-    demo_path = os.path.abspath('app/demo.wav')
-    eg_transcriptions, en_translation = audio2text.process(demo_path)
-    return {"arabic": eg_transcriptions, "english": en_translation }
-
-def translate_text(arabic_text: str):
-    translation = audio2text.translate(arabic_text)
-    return {"arabic": arabic_text, "english": translation }
-
-def translate_audio_upload(audio_file: UploadFile = File(...)):
-    write_file_path = UPLOADS_DIR+'/'+audio_file.filename.replace(' ', '-')
-    try:
-        with open(write_file_path, 'wb+') as f:
-            shutil.copyfileobj(audio_file.file, f)
-    except Exception:
-        raise HTTPException(status_code=500, detail='Something went wrong uploading the file')
-    finally:
-        audio_file.file.close()
+    def __init__(self, id, name, args = {}):
+        self.id = id
+        self.name = name
+        self.args = args
     
-    eg_transcriptions, en_translation = audio2text.process(write_file_path)
-    os.remove(write_file_path)
-    return {"arabic": eg_transcriptions, "english": en_translation }
+    def to_dict(self):
+        return jsonable_encoder({
+            "id": self.id,
+            "name": self.name,
+            "args": self.args
+        })
 
+        
+
+
+def fn_runner(item: Item):
+    MODEL_MAP.get(item.name)(item.args)
+    return "ok"
+
+async def process_requests(q: asyncio.Queue, pool: ProcessPoolExecutor):
+    while True:
+        item = await q.get()  # Get a request from the queue
+        loop = asyncio.get_running_loop()
+        fake_db[item.id] = "Processing..."
+        r = await loop.run_in_executor(pool, fn_runner, item)
+        q.task_done()  # tell the queue that the processing on the task is completed
+        fake_db[item.id] = "Done"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    q = asyncio.Queue()  # note that asyncio.Queue() is not thread safe
+    pool = ProcessPoolExecutor()
+    asyncio.create_task(process_requests(q, pool))  # Start the requests processing task
+    yield {"q": q, "pool": pool}
+    pool.shutdown()  # free any resources that the pool is using when the currently pending futures are done executing
+
+
+fake_db = defaultdict(str)
+
+def add_to_queue(request, name: str, args={}):
+    print('adding to queue', name, args)
+    item_id = str(uuid.uuid4())
+    item = Item(item_id, name, args)
+    request.state.q.put_nowait(item)  # Add request to the queue
+    fake_db[item_id] = "Pending..."
+    return item_id
+
+# >>> END ASYNC QUEUE
+
+
+app = FastAPI(lifespan=lifespan)
 
 # API ROUTES OUTSIDE OF INVOKE
 @app.get("/")
@@ -46,25 +81,32 @@ def health_check_api():
     return health_check()
 
 @app.get("/translate-demo")
-def translate_demo_api():
-    return translate_demo()
+async def translate_demo_api(request: Request):
+    return add_to_queue(request, 'translate_audio_demo') 
 
 @app.get("/translate-text")
-def translate_text_api(arabic_text: str):
-    return translate_text(arabic_text)
+async def translate_text_api(request: Request, eg_t: str):
+    return add_to_queue(request, 'translate_text', {"eg_t": eg_t})
 
 @app.post("/translate-audio")
-def translate_audio_upload_api(audio_file: UploadFile = File(...)):
-    return translate_audio_upload(audio_file)
+async def translate_audio_upload_api(request: Request, audio_file: UploadFile = File(...)):
+    return add_to_queue(request, 'translate_audio_upload', {"audio_file": audio_file})
 
 # AWS INVOCATION ROUTE 
-@app.post('/invocations')
-def invoke(audio_file: UploadFile | None = None, route: str = "None", arabic_text: str = ""):
-    if audio_file is not None:
-        return translate_audio_upload(audio_file)
-    elif route == 'translate_text' and len(arabic_text) > 0:
-        return translate_text(arabic_text)
-    elif route == 'translate_demo':  
-        return translate_demo()
-    else:
-      return health_check()
+# @app.post('/invocations')
+# async def invoke(audio_file: UploadFile | None = None, route: str = "None", arabic_text: str = ""):
+#     if audio_file is not None:
+#         return translate_audio_upload(audio_file)
+#     elif route == 'translate_text' and len(arabic_text) > 0:
+#         return translate_text(arabic_text)
+#     elif route == 'translate_demo':  
+#         return translate_demo()
+#     else:
+#       return health_check()
+    
+
+
+if __name__ == "__main__":
+    # config = uvicorn.Config("main:app", port=8000, log_level="info")
+    # server = uvicorn.Server(config)
+    uvicorn.run(app)

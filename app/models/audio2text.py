@@ -2,38 +2,38 @@ from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM, WhisperF
 import torch
 
 import sys
+from os import path
+from pathlib import Path
 import os
 
-torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+os.environ["CUDA_VISIBLE_DEVICES"]=""
+device = torch.device('cpu')
+# torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Cuda availability: ", torch.cuda.is_available())
+
+ARTIFACTS_DIR = Path('artifacts').resolve()
+
 
 # Pipes
-recognition_pipe = pipeline(model="alexstokes/whisper-small-eg2") 
-translate_pipe = pipeline(model="ahmedsamirio/Egyptian-Arabic-Translator-Llama-3-8B")
+recognition_pipe = pipeline('automatic-speech-recognition', ARTIFACTS_DIR.joinpath('recognition'))
+translation_pipe = pipeline('translation', ARTIFACTS_DIR.joinpath('translate'))
 
 
-LLAMA_EN_TEMPLATE = """<|begin_of_text|>Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
-
-### Instruction:
-Translate the following text to English.
-
-### Input:
-{message}
-
-### Response:
-"""
-
-
-def transcribe(audio_path):
+def transcribe(audio_path: Path):
+    audio_path = str(audio_path)
     text = recognition_pipe(audio_path)["text"]
     return text
 
 def translate(eg_text:str):
-    en_text = translate_pipe(LLAMA_EN_TEMPLATE.format(message=eg_text), 
-               max_new_tokens=512, 
+    en_text = translation_pipe(eg_text, 
+               max_new_tokens=200, 
                do_sample=True, 
                temperature=0.7, 
-               top_p=0.5)
-    en_text = en_text[0]['generated_text'].split('### Response:\n',1)[1]
+               top_p=0.5,
+               src_lang="arz_Arab",
+               tgt_lang="eng_Latn",
+               max_length=512)
     return en_text
 
 
