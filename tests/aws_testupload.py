@@ -15,7 +15,6 @@ response = client.invoke_endpoint(
     EndpointName=endpoint_name,
     ContentType='application/json',
     Body=json.dumps(post_data)
-    # Body="fileb://$app/demo.wav"
 )
 
 # Deserialize the response

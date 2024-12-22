@@ -9,3 +9,7 @@ transformers
 autoawq
 accelerate
 bitsandbytes
+fastapi[standard]
+retrying
+sagemaker_inference
+setuptools

@@ -2,3 +2,4 @@ __pycache__
 models/uploads
 terraform/.terraform
 artifacts
+.DS_Store
