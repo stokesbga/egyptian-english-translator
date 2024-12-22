@@ -12,7 +12,7 @@ device = torch.device('cpu')
 # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Cuda availability: ", torch.cuda.is_available())
 
-ARTIFACTS_DIR = Path('artifacts').resolve()
+ARTIFACTS_DIR = Path('../artifacts').resolve()
 
 
 # Pipes
@@ -27,7 +27,6 @@ def transcribe(audio_path: Path):
 
 def translate(eg_text:str):
     en_text = translation_pipe(eg_text, 
-               max_new_tokens=200, 
                do_sample=True, 
                temperature=0.7, 
                top_p=0.5,

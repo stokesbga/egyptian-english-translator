@@ -1,10 +1,11 @@
 import os
-import app.models.audio2text as audio2text
-from app.model_proccessors import MODEL_MAP, health_check
+import models.audio2text as audio2text
+from model_proccessors import MODEL_MAP, health_check
 from fastapi import FastAPI, File, UploadFile, Request
 from typing import Optional
 from pathlib import Path
 import uvicorn
+from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -14,7 +15,7 @@ import time
 import asyncio
 import uuid
 from collections import defaultdict
-
+from fastapi.security import OAuth2PasswordBearer
 
 # <<< START ASYNC QUEUE
 class Item:
@@ -38,17 +39,19 @@ class Item:
 
 
 def fn_runner(item: Item):
-    MODEL_MAP.get(item.name)(item.args)
-    return "ok"
+    return  MODEL_MAP.get(item.name)(item.args)
 
 async def process_requests(q: asyncio.Queue, pool: ProcessPoolExecutor):
     while True:
         item = await q.get()  # Get a request from the queue
         loop = asyncio.get_running_loop()
-        fake_db[item.id] = "Processing..."
+        fake_db[item.id]["status"] = "Processing"
         r = await loop.run_in_executor(pool, fn_runner, item)
         q.task_done()  # tell the queue that the processing on the task is completed
-        fake_db[item.id] = "Done"
+        fake_db[item.id]["status"] = "Complete"
+        fake_db[item.id]["runtime"] = time.time() - fake_db[item.id]["start_time"]
+        fake_db[item.id]["data"] = r
+        print('job finished: ', item.id)
 
 
 @asynccontextmanager
@@ -67,7 +70,8 @@ def add_to_queue(request, name: str, args={}):
     item_id = str(uuid.uuid4())
     item = Item(item_id, name, args)
     request.state.q.put_nowait(item)  # Add request to the queue
-    fake_db[item_id] = "Pending..."
+    start_time = time.time()
+    fake_db[item_id] = {"status": "Waiting", "start_time": start_time }
     return item_id
 
 # >>> END ASYNC QUEUE
@@ -91,6 +95,13 @@ async def translate_text_api(request: Request, eg_t: str):
 @app.post("/translate-audio")
 async def translate_audio_upload_api(request: Request, audio_file: UploadFile = File(...)):
     return add_to_queue(request, 'translate_audio_upload', {"audio_file": audio_file})
+
+@app.get("/status")
+async def check_status(id: str):
+    if id in fake_db:
+        return fake_db[id]
+    else:
+        return JSONResponse("Process ID Not Found", status_code=404)
 
 # AWS INVOCATION ROUTE 
 # @app.post('/invocations')

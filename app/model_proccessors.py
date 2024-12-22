@@ -1,12 +1,12 @@
 import os
 from fastapi import File, UploadFile, HTTPException
-import app.models.audio2text as audio2text
+import models.audio2text as audio2text
 import shutil
 from pathlib import Path
 
 
-UPLOADS_DIR = Path('app/uploads').resolve()
-DEMO_WAV = Path('app/demo.wav').resolve()
+UPLOADS_DIR = Path('uploads').resolve()
+DEMO_WAV = Path('demo.wav').resolve()
 
 
 def health_check(_ = None):
