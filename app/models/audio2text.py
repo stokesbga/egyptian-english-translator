@@ -6,18 +6,25 @@ from os import path
 from pathlib import Path
 import os
 
+torch.backends.nnpack.enabled = False
 
 os.environ["CUDA_VISIBLE_DEVICES"]=""
 device = torch.device('cpu')
 # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Cuda availability: ", torch.cuda.is_available())
 
-ARTIFACTS_DIR = Path('../artifacts').resolve()
+ARTIFACTS_DIR = Path('artifacts').resolve()
 
 
 # Pipes
-recognition_pipe = pipeline('automatic-speech-recognition', ARTIFACTS_DIR.joinpath('recognition'))
-translation_pipe = pipeline('translation', ARTIFACTS_DIR.joinpath('translate'))
+recognition_pipe = pipeline(model="alexstokes/whisper-small-eg2",
+    torch_dtype=torch.bfloat16,
+    device_map="auto")
+translation_pipe = pipeline(task="translation",
+                      model="facebook/nllb-200-3.3B",
+                      torch_dtype=torch.bfloat16) 
+# recognition_pipe = pipeline('automatic-speech-recognition', ARTIFACTS_DIR.joinpath('recognition'))
+# translation_pipe = pipeline('translation', ARTIFACTS_DIR.joinpath('translate'))
 
 
 def transcribe(audio_path: Path):

@@ -1,6 +1,6 @@
 import os
-import models.audio2text as audio2text
-from model_proccessors import MODEL_MAP, health_check
+import app.models.audio2text as audio2text
+from app.model_proccessors import MODEL_MAP, health_check
 from fastapi import FastAPI, File, UploadFile, Request
 from typing import Optional
 from pathlib import Path
